@@ -76,7 +76,7 @@ router.get('/menu', (req, res) => {
 router.post('/order', (req, res) => {
     let sql = `insert into list (menuId,customerTable,qty) values ?`
     let dataList = req.body.list
-
+    // console.log(dataList.length,dataList[0].length)
     conn.query(sql, [dataList], (err, result) => {
         if (err) return res.send({
             error: err.message
@@ -87,7 +87,7 @@ router.post('/order', (req, res) => {
 
 // GET ALL ORDER FOR KITCHEN
 router.get('/order/kitchen', (req,res) => {
-    let sql = `select l.id as id, productName,qty,customerTable from list l join menu m on l.menuId = m.id where cooked = '0'`
+    let sql = `select productName,sum(qty) as qty,customerTable from list l join menu m on l.menuId = m.id where cooked = '0' group by productName,customerTable`
 
     conn.query(sql,(err,result) => {
         if (err) return res.send({
@@ -101,7 +101,7 @@ router.get('/order/kitchen', (req,res) => {
 
 // DELETE KITCHEN ORDER BY CUSTOMERTABLE
 router.delete('/order/kitchen/:customerTable',(req,res) => {
-    let sql = `delete from list where customerTable = ${req.params.customerTable}`
+    let sql = `delete from list where customerTable = '${req.params.customerTable}'`
 
     conn.query(sql, (err,result) => {
         if (err) return res.send({
@@ -113,7 +113,7 @@ router.delete('/order/kitchen/:customerTable',(req,res) => {
 
 // PATCH COOKED BY CUSTOMERTABLE
 router.patch('/order/kitchen/:customerTable',(req,res) => {
-    let sql = `update list set cooked = true where customerTable = ${req.params.customerTable}`
+    let sql = `update list set cooked = true where customerTable = '${req.params.customerTable}'`
 
     conn.query(sql,(err,result) => {
         if(err) return res.send({
@@ -137,10 +137,10 @@ router.get('/order/cashier',(req,res) => {
 
 // CHECKOUT ORDER
 router.post('/order/cashier/:customerTable',(req,res) => {
-    let sql = `insert into history (menuId,qty,customerTable) values ?`
-    let sql2 = `delete from list where customerTable = ${req.params.customerTable}`
+    let sql = `insert into history (menuId,qty,customerTable,checkout_time) values ?`
+    let sql2 = `delete from list where customerTable = '${req.params.customerTable}'`
     let dataList = req.body.list
-    
+
     conn.query(sql,[dataList],(err,result) => {
         if(err) return res.send({
             error: err.message
@@ -156,7 +156,7 @@ router.post('/order/cashier/:customerTable',(req,res) => {
 
 // GET ORDER HISTORY
 router.get('/orderhistory',(req,res) => {
-    let sql = `select h.id as id,productName,p.productType,qty,m.productPrice from history h join menu m on h.menuId = m.id join producttype p on m.productType = p.id order by id`
+    let sql = `select h.id as id,productName,p.productType,qty,m.productPrice,DATE_FORMAT(checkout_time, "%Y-%m-%d %H:%i:%s") AS checkout_time from history h join menu m on h.menuId = m.id join producttype p on m.productType = p.id order by id`
 
     conn.query(sql,(err,result) => {
         if(err) return res.send({
@@ -342,7 +342,7 @@ router.post('/newmenu/confirm/:id',(req,res)=> {
 
 // GET CASHIER ORDER BY CUSTOMER TABLE
 router.get('/order/cashier/:customerTable',(req,res) => {
-    let sql = `select m.id as menuId, productName,qty,customerTable,productPrice from list l join menu m on l.menuId = m.id where cooked = '1' and customerTable = ${req.params.customerTable}  `
+    let sql = `select m.id as menuId, productName,qty,customerTable,productPrice from list l join menu m on l.menuId = m.id where cooked = '1' and customerTable = '${req.params.customerTable}'`
 
     conn.query(sql,(err,result) => {
         if(err) return res.send({

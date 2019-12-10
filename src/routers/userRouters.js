@@ -6,6 +6,7 @@ const bcryptjs = require("bcryptjs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const jwt = require("jsonwebtoken")
 
 // FOLDER UPLOAD LOCATION
 const uploadDirectory = path.join(__dirname, '/../../public/avatar/')
@@ -80,6 +81,17 @@ router.get('/avatar/:filename', (req, res) => {
     })
 })
 
+// router.get('/me',(req,res) => {
+//     // let token = jwt.sign({id:1,name:'agus',email:'agus@me.com',alamat:'gatau'},'sshhh')
+//     // res.send(token)
+//     let token = req.headers['x-access-token']
+//     jwt.verify(token, 'sshhh', function(err, decoded) {
+//         if (err) return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        
+//         res.status(200).send(decoded);
+//     });
+// })
+
 
 // ADD USER
 router.post("/users", (req, res) => {
@@ -117,6 +129,7 @@ router.post("/users", (req, res) => {
                     return res.send({
                         error: err.message
                     });
+                    let id = result[0].id
                 let dataEmployee = {
                     name: data.name,
                     email: data.email,
@@ -137,7 +150,7 @@ router.post("/users", (req, res) => {
                                 throw err;
                             });
                         }
-                        res.send(result);
+                        res.send({result});
                     });
                     // kirimEmail(result[0])
                 });
@@ -193,7 +206,7 @@ router.get('/users/:username', (req, res) => {
 
 // GET EMPLOYEE DATA
 router.get('/employee',(req,res) => {
-    let sql = `select *,DATE_FORMAT(birthDate, "%Y-%m-%d") AS birthDate from employee e join usertype u on e.userType = u.id where e.id != 1`
+    let sql = `select *,DATE_FORMAT(birthDate, "%Y-%m-%d") AS birthDate from employee e join usertype u on e.userType = u.id where e.id != 1 order by u.id`
 
     conn.query(sql,(err,result) => {
         if(err) return res.send({
@@ -205,7 +218,7 @@ router.get('/employee',(req,res) => {
 
 // UPDATE PROFILE
 router.patch('/users/:username', upload.single('avatar'), (req, res) => {
-    let sql = `select *,DATE_FORMAT(birthDate, "%Y-%m-%d") AS birthDate from users u join employee e on u.id = e.userId where username = '${req.params.username}'`
+    let sql = `select *,DATE_FORMAT(birthDate, "%Y-%m-%d") AS birthDate,u.id as id from users u join employee e on u.id = e.userId where username = '${req.params.username}'`
     let body = req.body
     let data = {
         name: body.name,
@@ -261,7 +274,6 @@ router.patch('/users/:username', upload.single('avatar'), (req, res) => {
                         password: dataPassword.newPassword
                     }
                     let sql3 = `UPDATE users set ? WHERE id = ${userId}`
-    
                     conn.query(sql3, dataUser, (err, result) => {
                         if (err) return res.send({
                             error: err.message
@@ -279,8 +291,7 @@ router.patch('/users/:username', upload.single('avatar'), (req, res) => {
                     }
     
                     let imgPath = `${uploadDirectory}${avatarName}`
-                    if (avatarName !== "undefined" && avatarName !== "null") fs.unlinkSync(imgPath)
-    
+                    if (avatarName !== "undefined" && avatarName !== "null" && avatarName !== 'dummy.png') fs.unlinkSync(imgPath)
                     let sql4 = `UPDATE users set ? WHERE id = ${userId}`
                     conn.query(sql4, dataUser, (err, result) => {
                         if (err) return res.send({
@@ -301,7 +312,6 @@ router.patch('/users/:username', upload.single('avatar'), (req, res) => {
                             throw err;
                         });
                     }
-                    console.log('asu')
                     res.send({
                         message,
                         avatar
