@@ -81,16 +81,31 @@ router.get('/avatar/:filename', (req, res) => {
     })
 })
 
-// router.get('/me',(req,res) => {
-//     // let token = jwt.sign({id:1,name:'agus',email:'agus@me.com',alamat:'gatau'},'sshhh')
-//     // res.send(token)
-//     let token = req.headers['x-access-token']
-//     jwt.verify(token, 'sshhh', function(err, decoded) {
-//         if (err) return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+function verifyToken(req, res, next) {
+    var token = req.headers['x-access-token'];
+    if (!token)
+    return res.status(403).send({ auth: false, message: 'No token provided.' });
+    
+    jwt.verify(token, 'sshhh', function(err, decoded) {
+    if (err)
+    return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
         
-//         res.status(200).send(decoded);
-//     });
-// })
+    // if everything good, save to request for use in other routes
+    req.userId = decoded.id;
+    next();
+    });
+}
+
+router.get('/me',verifyToken,(req,res) => {
+    // let token = jwt.sign({id:1,name:'agus',email:'agus@me.com',alamat:'gatau'},'sshhh')
+    // res.send(token)
+    let token = req.headers['x-access-token']
+    jwt.verify(token, 'sshhh', function(err, decoded) {
+        if (err) return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        
+        res.status(200).send(decoded);
+    });
+})
 
 
 // ADD USER

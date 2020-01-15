@@ -87,7 +87,7 @@ router.post('/order', (req, res) => {
 
 // GET ALL ORDER FOR KITCHEN
 router.get('/order/kitchen', (req,res) => {
-    let sql = `select productName,sum(qty) as qty,customerTable from list l join menu m on l.menuId = m.id where cooked = '0' group by productName,customerTable`
+    let sql = `select l.id as id,productName,sum(qty) as qty,customerTable from list l join menu m on l.menuId = m.id where cooked = '0' group by productName,customerTable,id`
 
     conn.query(sql,(err,result) => {
         if (err) return res.send({
@@ -354,6 +354,16 @@ router.get('/order/cashier/:customerTable',(req,res) => {
     })
 })
 
+// DELETE ONE ITEM
+router.delete('/deleteitem/:id',(req,res) => {
+    let sql = `delete from list where id = ${req.params.id}`
+    conn.query(sql,(err,result)=>{
+        if(err) return res.send({
+            error: err.message
+        })
+        res.send({result})
+    })
+})
 
 
 module.exports = router
